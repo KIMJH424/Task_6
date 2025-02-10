@@ -4,8 +4,12 @@ DEFINE_LOG_CATEGORY(LogTask);
 
 
 AArchedWall::AArchedWall()
+	: MoveSpeedForward(100.0f)
+	, MoveSpeedSide(50.0f)
+	, MoveRange(50.0f)
+	, DistanceThreshold(100.0f)
+	, TargetLocation(FVector(0.0f, 0.0f, 0.0f))
 {
- 
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Scene Component를 생성하고 루트로 설정
@@ -33,31 +37,42 @@ void AArchedWall::BeginPlay()
 	UE_LOG(LogTask, Error, TEXT("START"));
 
 	StartLocationY = GetActorLocation().Y;
+
+
 }
 
 void AArchedWall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!FMath::IsNearlyZero(MoveSpeedX))
+	if (!FMath::IsNearlyZero(MoveSpeedForward))
 	{
-		AddActorWorldOffset(FVector(MoveSpeedX * DeltaTime, 0.0f, 0.0f));
+		AddActorWorldOffset(FVector(MoveSpeedForward * DeltaTime, 0.0f, 0.0f));
 	}
 
-	if (!FMath::IsNearlyZero(MoveSpeedY))
+	if (!FMath::IsNearlyZero(MoveSpeedSide))
 	{
-		float NewLocationY = StartLocationY + FMath::Sin(GetWorld()->GetTimeSeconds() * MoveSpeedY) * MoveRange;
+		float NewLocationY = StartLocationY + FMath::Sin(GetWorld()->GetTimeSeconds() * MoveSpeedSide) * MoveRange;
 		FVector NewLocation = GetActorLocation();
 		NewLocation.Y = NewLocationY;
 		SetActorLocation(NewLocation);
 	}
 
-	
+	if (TargetLocation.X == 0.0f)
+	{
+		TargetLocation = FVector(0.0f, 0.0f, 0.0f);
+	}
 
-	
-
+	CheckAndDelete();
 }
+	void AArchedWall::CheckAndDelete()
+	{
+		float DistanceToTarget = FVector::Dist(GetActorLocation(), TargetLocation);
 
-
-
+		if (DistanceToTarget <= DistanceThreshold || GetActorLocation().X >= TargetLocation.X)
+		{
+			Destroy();
+			SetActorTickEnabled(false);
+		}
+	}
 
